@@ -285,30 +285,46 @@ app.get("*", (req, res) => { res.setHeader("Content-Type", "text/html"); res.sen
 process.on("unhandledRejection", e => console.error("unhandledRejection:", e));
 process.on("uncaughtException", e => console.error("uncaughtException:", e));
 
+/* ── FETCH SCHEDULER ──
+   The same staggered routine runs at server launch AND whenever the monthly
+   period rolls over, so the new live board and the just-ended month never hit
+   Roulo at the same time (15-min rate limit). */
+const MIN = 60 * 1000;
+let schedTimers = [];
+function clearSched() { schedTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); schedTimers = []; }
+
+function startWarmup() {
+  clearSched();
+  // Warm-up window (first 3 hours): current @ 0,30,60… ; last month @ 15,45,75…
+  refreshCurrent().catch(() => {});                                          // t=0  current
+  schedTimers.push(setInterval(() => refreshCurrent().catch(() => {}), 30 * MIN));
+  schedTimers.push(setTimeout(() => {
+    ensureHistory().catch(() => {});                                         // t=15 last month
+    schedTimers.push(setInterval(() => ensureHistory().catch(() => {}), 30 * MIN));
+  }, 15 * MIN));
+  // After 3 hours: steady state — current every 15 min, history every 30 min (rollover-only)
+  schedTimers.push(setTimeout(() => {
+    clearSched();
+    schedTimers.push(setInterval(() => refreshCurrent().catch(() => {}), BOARD_TTL));
+    schedTimers.push(setInterval(() => ensureHistory().catch(() => {}), 30 * MIN));
+  }, 3 * 60 * MIN));
+}
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Running on port ${PORT}`);
-  const MIN = 60 * 1000;
 
-  /* Staggered warm-up for the first 3 hours after launch, so the live board and
-     last-month winners never hit Roulo at the same time (15-min rate limit):
-       current     @ 0, 30, 60, …  min   (every 30 min)
-       last month  @ 15, 45, 75, … min   (every 30 min, offset by 15 min) */
-  refreshCurrent().catch(() => {});                                       // t=0  current
-  const warmCur = setInterval(() => refreshCurrent().catch(() => {}), 30 * MIN);
-  let warmHist;
-  setTimeout(() => {
-    ensureHistory().catch(() => {});                                      // t=15 last month
-    warmHist = setInterval(() => ensureHistory().catch(() => {}), 30 * MIN);
-  }, 15 * MIN);
+  startWarmup();   // launch warm-up
 
-  /* After 3 hours: steady state — current every 15 min; history every 30 min
-     (history only actually calls Roulo when the month has rolled over). */
-  setTimeout(() => {
-    clearInterval(warmCur);
-    if (warmHist) clearInterval(warmHist);
-    setInterval(() => refreshCurrent().catch(() => {}), BOARD_TTL);
-    setInterval(() => ensureHistory().catch(() => {}), 30 * MIN);
-  }, 3 * 60 * MIN);
+  // Re-run the staggered warm-up whenever the period rolls over to a new month.
+  let activePeriodKey = getPeriodRange(loadConfig()).periodKey;
+  setInterval(() => {
+    const k = getPeriodRange(loadConfig()).periodKey;
+    if (k !== activePeriodKey) {
+      activePeriodKey = k;
+      boardCache = null; boardCacheAt = 0; boardCacheKey = "";  // drop the ended month's cache
+      startWarmup();
+    }
+  }, MIN);
 
   // free-tier keep-alive: self-ping the public URL so Render doesn't spin us down (no Roulo call)
   const SELF = process.env.RENDER_EXTERNAL_URL;
