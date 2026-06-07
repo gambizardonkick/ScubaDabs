@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="sbg" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#0c2a2c"/>
+      <stop offset="60%" stop-color="#071417"/>
+      <stop offset="100%" stop-color="#04090b"/>
+    </radialGradient>
+    <linearGradient id="steal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5FF5E9"/>
+      <stop offset="100%" stop-color="#0FB5A8"/>
+    </linearGradient>
+    <filter id="sglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <circle cx="200" cy="200" r="196" fill="url(#sbg)"/>
+  <circle cx="200" cy="200" r="190" fill="none" stroke="url(#steal)" stroke-width="5" filter="url(#sglow)" opacity="0.95"/>
+  <circle cx="200" cy="200" r="176" fill="none" stroke="#19E3D4" stroke-width="1" opacity="0.25"/>
+  <!-- scuba mask -->
+  <g filter="url(#sglow)">
+    <rect x="92" y="120" width="216" height="118" rx="58" fill="none" stroke="url(#steal)" stroke-width="9"/>
+    <ellipse cx="153" cy="178" rx="40" ry="34" fill="#0FB5A8" opacity="0.18" stroke="url(#steal)" stroke-width="6"/>
+    <ellipse cx="247" cy="178" rx="40" ry="34" fill="#0FB5A8" opacity="0.18" stroke="url(#steal)" stroke-width="6"/>
+    <path d="M150 240 q50 26 100 0" fill="none" stroke="url(#steal)" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <text x="200" y="312" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="900" fill="url(#steal)" letter-spacing="1" filter="url(#sglow)">SCUBADABS</text>
+  <text x="200" y="346" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700" fill="#6B8079" letter-spacing="6">ROULO.GG</text>
+</svg>

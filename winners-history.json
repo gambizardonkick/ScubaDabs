@@ -1,0 +1,41 @@
+[
+  {
+    "periodKey": "2026-05-05_2026-06-04",
+    "periodStart": "2026-05-05",
+    "periodEnd": "2026-06-04",
+    "endedAt": "2026-06-07",
+    "totalPrize": "$1,000",
+    "winners": [
+      {
+        "rank": 1,
+        "name": "clarissa",
+        "wagered": 0,
+        "prize": "$600"
+      },
+      {
+        "rank": 2,
+        "name": "Dkayyy",
+        "wagered": 0,
+        "prize": "$200"
+      },
+      {
+        "rank": 3,
+        "name": "AlmHighty204",
+        "wagered": 0,
+        "prize": "$150"
+      },
+      {
+        "rank": 4,
+        "name": "chrissellka",
+        "wagered": 0,
+        "prize": "$50"
+      },
+      {
+        "rank": 5,
+        "name": "Drake",
+        "wagered": 0,
+        "prize": ""
+      }
+    ]
+  }
+]

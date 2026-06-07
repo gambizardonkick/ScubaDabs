@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — ScubaDabs × MrTerpyy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --teal: #19E3D4; --teal-deep: #0FB5A8; --bg: #05080A; --surface: #0A1015;
+      --surface2: #0F171D; --border: rgba(25,227,212,0.13); --border-bright: rgba(25,227,212,0.40);
+      --text: #EAF6F5; --muted: #6B8079;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+    .bg { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse 70% 50% at 20% 10%, rgba(25,227,212,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 80% 90%, rgba(15,181,168,0.06) 0%, transparent 55%);
+    }
+    #login-screen { position: relative; z-index: 1; width: 100%; max-width: 400px; }
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo .brand { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+    .login-logo .brand span { color: var(--teal); }
+    .login-logo .sub { font-size: 12px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 6px; font-weight: 700; }
+    .card { background: var(--surface); border: 1px solid var(--border-bright); border-radius: 24px; padding: 32px; box-shadow: 0 32px 80px rgba(0,0,0,0.6); }
+    .card-title { font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+    .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 26px; }
+    #admin-screen { display: none; position: relative; z-index: 1; width: 100%; max-width: 580px; }
+    .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .admin-title { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+    .admin-title span { color: var(--teal); }
+    .admin-meta { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; margin-bottom: 16px; }
+    .section-card-title { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--teal); margin-bottom: 18px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+    .form-hint { color: var(--muted); font-size: 10px; text-transform: none; letter-spacing: 0; }
+    .form-input { width: 100%; padding: 11px 14px; border-radius: 11px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 14px; font-family: inherit; outline: none; transition: border-color .2s, box-shadow .2s; }
+    .form-input:focus { border-color: var(--border-bright); box-shadow: 0 0 0 3px rgba(25,227,212,0.08); }
+    .form-input.mono { font-family: 'Courier New', monospace; font-size: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-primary { width: 100%; padding: 13px; border-radius: 13px; background: linear-gradient(135deg, var(--teal), var(--teal-deep)); border: none; color: #03100E; font-size: 15px; font-weight: 900; cursor: pointer; transition: transform .2s, box-shadow .2s; font-family: inherit; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(25,227,212,0.35); }
+    .btn-save { padding: 12px 28px; width: auto; border-radius: 13px; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .2s; }
+    .btn-ghost:hover { border-color: var(--border-bright); color: var(--text); }
+    .row-btns { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+    .msg { font-size: 13px; padding: 10px 14px; border-radius: 10px; margin-top: 14px; display: none; }
+    .msg.show { display: block; }
+    .msg.ok { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.28); color: #00ff88; }
+    .msg.err { background: rgba(255,60,60,0.09); border: 1px solid rgba(255,60,60,0.28); color: #ff6b6b; }
+    .back-link { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; margin-bottom: 24px; transition: color .2s; }
+    .back-link:hover { color: var(--teal); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 8px #00ff88; display: inline-block; margin-right: 6px; animation: sp 1.2s ease-in-out infinite; }
+    @keyframes sp { 50% { opacity: 0.3; } }
+    .prize-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .prize-cell { display: flex; flex-direction: column; gap: 5px; }
+    .prize-cell-lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
+    .prize-cell:nth-child(1) .prize-cell-lbl { color: var(--teal); }
+    .prize-cell:nth-child(2) .prize-cell-lbl { color: #cfd5de; }
+    .prize-cell:nth-child(3) .prize-cell-lbl { color: #5FF5E9; }
+    @media (max-width: 500px) { .prize-grid { grid-template-columns: repeat(2, 1fr); } .grid-2 { grid-template-columns: 1fr; } body { padding: 16px; } }
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">
+    <div class="brand">ScubaDabs <span>×</span> MrTerpyy</div>
+    <div class="sub">Admin Panel</div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔐 Secure Access</div>
+    <div class="card-sub">Enter your admin password to continue.</div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="pw-input" placeholder="Enter password…" autocomplete="current-password" />
+    </div>
+    <div class="msg" id="login-msg"></div>
+    <button class="btn-primary" id="login-btn" style="margin-top:18px;">Login</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-screen">
+  <a class="back-link" href="/" id="back-btn">← Back to leaderboard</a>
+  <div class="admin-header">
+    <div class="admin-title">⚙️ Admin <span>Panel</span></div>
+    <div class="admin-meta"><span class="status-dot"></span>Connected</div>
+  </div>
+
+  <!-- ROULO / RACE -->
+  <div class="section-card">
+    <div class="section-card-title">🎰 Roulo.GG &amp; Race</div>
+    <div class="form-group">
+      <label class="form-label">Roulo API Key</label>
+      <input type="text" class="form-input mono" id="cfg-api" placeholder="API key" autocomplete="off" />
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">Promo Code</label>
+        <input type="text" class="form-input" id="cfg-code" placeholder="TERPS" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Race Start Date <span class="form-hint">(monthly cycle anchors to this date)</span></label>
+        <input type="date" class="form-input" id="cfg-start" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Referral / Sign-up URL</label>
+      <input type="text" class="form-input" id="cfg-ref" placeholder="https://roulo.gg/r/scubadabs" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kick Channel <span class="form-hint">(optional — leave blank to hide the stream player)</span></label>
+      <input type="text" class="form-input" id="cfg-kick" placeholder="e.g. scubadabs" autocomplete="off" />
+    </div>
+  </div>
+
+  <!-- PRIZES -->
+  <div class="section-card">
+    <div class="section-card-title">💰 Prize Settings</div>
+    <div class="form-group">
+      <label class="form-label">Total Prize Pool (displayed on page)</label>
+      <input type="text" class="form-input" id="cfg-total" placeholder="$150" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Prizes by Position — leave blank for no prize</label>
+      <div class="prize-grid" id="prize-grid"></div>
+    </div>
+  </div>
+
+  <!-- SECURITY -->
+  <div class="section-card">
+    <div class="section-card-title">🛡️ Security</div>
+    <div class="form-group">
+      <label class="form-label">New Admin Password <span class="form-hint">(min 6 chars — leave blank to keep current)</span></label>
+      <input type="password" class="form-input" id="cfg-newpw" placeholder="New password…" autocomplete="new-password" />
+    </div>
+  </div>
+
+  <div class="msg" id="save-msg"></div>
+  <div class="row-btns" style="margin-top:20px;">
+    <button class="btn-ghost" id="logout-btn">Logout</button>
+    <button class="btn-primary btn-save" id="save-btn">Save Changes</button>
+  </div>
+</div>
+
+<script>
+function _f(u, o={}) { if (o.method === 'POST') { o.headers = Object.assign({}, o.headers, {'Content-Type': 'application/json'}); } return fetch(u, o); }
+let _pw = null;
+function msg(id, text, type) { const e=document.getElementById(id); e.textContent=text; e.className=`msg show ${type}`; }
+
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('login-btn').click(); });
+
+document.getElementById('login-btn').addEventListener('click', async () => {
+  const pw = document.getElementById('pw-input').value.trim();
+  if (!pw) return;
+  document.getElementById('login-btn').textContent = 'Verifying…';
+  try {
+    const r = await _f('/api/admin/login', { method:'POST', body: JSON.stringify({password:pw}) });
+    const d = await r.json();
+    if (d.success) {
+      _pw = pw;
+      await loadAdminCfg();
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'block';
+    } else { msg('login-msg', d.error || 'Wrong password.', 'err'); }
+  } catch(e) { msg('login-msg', 'Server error.', 'err'); }
+  document.getElementById('login-btn').textContent = 'Login';
+});
+
+const RANK_LABELS = ['🥇 1st','🥈 2nd','🥉 3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th','13th','14th','15th'];
+(function buildPrizeGrid() {
+  const grid = document.getElementById('prize-grid');
+  RANK_LABELS.forEach((lbl, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'prize-cell';
+    cell.innerHTML = `<div class="prize-cell-lbl">${lbl}</div><input type="text" class="form-input" id="cfg-p${i+1}" placeholder="e.g. $80" autocomplete="off" />`;
+    grid.appendChild(cell);
+  });
+})();
+
+async function loadAdminCfg() {
+  try {
+    const r = await _f(`/api/admin/config?password=${encodeURIComponent(_pw)}`);
+    if (!r.ok) return;
+    const { config: c } = await r.json();
+    document.getElementById('cfg-api').value = c.apiKey || '';
+    document.getElementById('cfg-code').value = c.code || '';
+    document.getElementById('cfg-start').value = c.raceStart || '';
+    document.getElementById('cfg-ref').value = c.refUrl || '';
+    document.getElementById('cfg-kick').value = c.kickChannel || '';
+    document.getElementById('cfg-total').value = c.totalPrize || '$150';
+    const prizes = c.prizes || [];
+    for (let i = 0; i < 15; i++) { const el = document.getElementById(`cfg-p${i+1}`); if (el) el.value = prizes[i] || ''; }
+    document.getElementById('cfg-newpw').value = '';
+    document.getElementById('save-msg').className = 'msg';
+  } catch(e) {}
+}
+
+document.getElementById('save-btn').addEventListener('click', async () => {
+  const body = {
+    password: _pw,
+    apiKey: document.getElementById('cfg-api').value.trim(),
+    code: document.getElementById('cfg-code').value.trim(),
+    raceStart: document.getElementById('cfg-start').value.trim(),
+    refUrl: document.getElementById('cfg-ref').value.trim(),
+    kickChannel: document.getElementById('cfg-kick').value.trim(),
+    totalPrize: document.getElementById('cfg-total').value.trim(),
+    prizes: Array.from({length: 15}, (_, i) => (document.getElementById(`cfg-p${i+1}`)?.value || '').trim())
+  };
+  const newpw = document.getElementById('cfg-newpw').value.trim();
+  if (newpw) body.adminPassword = newpw;
+  document.getElementById('save-btn').textContent = 'Saving…';
+  try {
+    const r = await _f('/api/admin/config', { method:'POST', body: JSON.stringify(body) });
+    const d = await r.json();
+    if (d.success) { if (newpw) _pw = newpw; msg('save-msg', '✅ Saved successfully!', 'ok'); }
+    else { msg('save-msg', d.error || 'Failed to save.', 'err'); }
+  } catch(e) { msg('save-msg', 'Server error.', 'err'); }
+  document.getElementById('save-btn').textContent = 'Save Changes';
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  _pw = null;
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'block';
+  document.getElementById('pw-input').value = '';
+});
+document.getElementById('back-btn').addEventListener('click', e => { e.preventDefault(); window.location.href = '/'; });
+</script>
+</body>
+</html>
