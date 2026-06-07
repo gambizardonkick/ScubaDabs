@@ -222,19 +222,17 @@ app.get("/admin", (req, res) => { res.setHeader("Content-Type", "text/html"); re
 
 app.get("/healthz", (req, res) => res.json({ ok: true }));
 
-// Always answers from cache instantly; a stale cache refreshes in the background.
-// A browser refresh never blocks on (or triggers a duplicate) Roulo call.
+// Always answers from cache instantly. Roulo is only ever called by the
+// scheduler below — a page request fetches only to fill an empty cache (cold start).
 app.get("/api/leaderboard", async (req, res) => {
-  if (boardCache) { refreshCurrent().catch(() => {}); return res.json(boardCache); }
-  try { return res.json((await refreshCurrent()) || emptyBoard()); }
-  catch (e) { return res.json(emptyBoard()); }
+  if (!boardCache) { try { await refreshCurrent(); } catch (e) {} }
+  return res.json(boardCache || emptyBoard());
 });
 
-/* Previous month's final standings — fetched once, then cached (a completed
-   month never changes). Served from cache; filled in the background if missing. */
+/* Previous month's final standings — served purely from cache; the scheduler
+   keeps it populated (fetched once per month, staggered away from the live board). */
 app.get("/api/history", (req, res) => {
   res.json({ history: loadJson(HISTORY_FILE, []) });
-  ensureHistory().catch(() => {});
 });
 
 app.get("/api/config-public", (req, res) => {
@@ -289,12 +287,30 @@ process.on("uncaughtException", e => console.error("uncaughtException:", e));
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Running on port ${PORT}`);
-  // warm caches at boot, staggered so current + previous never hit Roulo at once
-  refreshCurrent().catch(() => {});
-  setTimeout(() => ensureHistory().catch(() => {}), 8000);
-  // keep the current board warm on its own timer (independent of page traffic)
-  setInterval(() => refreshCurrent().catch(() => {}), BOARD_TTL);
-  // free-tier keep-alive: self-ping the public URL so Render doesn't spin us down
+  const MIN = 60 * 1000;
+
+  /* Staggered warm-up for the first 3 hours after launch, so the live board and
+     last-month winners never hit Roulo at the same time (15-min rate limit):
+       current     @ 0, 30, 60, …  min   (every 30 min)
+       last month  @ 15, 45, 75, … min   (every 30 min, offset by 15 min) */
+  refreshCurrent().catch(() => {});                                       // t=0  current
+  const warmCur = setInterval(() => refreshCurrent().catch(() => {}), 30 * MIN);
+  let warmHist;
+  setTimeout(() => {
+    ensureHistory().catch(() => {});                                      // t=15 last month
+    warmHist = setInterval(() => ensureHistory().catch(() => {}), 30 * MIN);
+  }, 15 * MIN);
+
+  /* After 3 hours: steady state — current every 15 min; history every 30 min
+     (history only actually calls Roulo when the month has rolled over). */
+  setTimeout(() => {
+    clearInterval(warmCur);
+    if (warmHist) clearInterval(warmHist);
+    setInterval(() => refreshCurrent().catch(() => {}), BOARD_TTL);
+    setInterval(() => ensureHistory().catch(() => {}), 30 * MIN);
+  }, 3 * 60 * MIN);
+
+  // free-tier keep-alive: self-ping the public URL so Render doesn't spin us down (no Roulo call)
   const SELF = process.env.RENDER_EXTERNAL_URL;
-  if (SELF) setInterval(() => { fetch(`${SELF}/healthz`).catch(() => {}); }, 10 * 60 * 1000);
+  if (SELF) setInterval(() => { fetch(`${SELF}/healthz`).catch(() => {}); }, 10 * MIN);
 });
